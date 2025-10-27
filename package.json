@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://nikhilghode.github.io/nikhil-site/",
+  "homepage": "https://nikhilghode.site/",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
