@@ -39,8 +39,8 @@ const Index = () => {
               {[
                 "Home",
                 "About",
-                "Portfolio",
                 "Skills",
+                "Portfolio",
                 "Services",
                 "Contact",
               ].map((item) => (

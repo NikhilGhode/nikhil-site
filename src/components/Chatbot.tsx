@@ -20,7 +20,11 @@ export const Chatbot = () => {
     },
   ]);
   const [inputValue, setInputValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Flask backend URL - update this with your actual backend URL
+  const FLASK_BACKEND_URL = "https://gemini-api-flask.onrender.com";
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -36,7 +40,35 @@ export const Chatbot = () => {
     { id: 3, text: "How to contact him?", action: "contact" },
   ];
 
-  const handleQuickReply = (reply: typeof quickReplies[0]) => {
+  const sendMessageToBackend = async (userMessage: string, conversationHistory: Message[]) => {
+    try {
+      const response = await fetch(`${FLASK_BACKEND_URL}/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          history: conversationHistory.map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.text
+          }))
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Backend error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.reply || data.response || "Sorry, I couldn't get a response from the backend.";
+    } catch (error) {
+      console.error('Error calling Flask backend:', error);
+      return "Sorry, I'm having trouble connecting to the backend. Please make sure your Flask server is running and accessible.";
+    }
+  };
+
+  const handleQuickReply = async (reply: typeof quickReplies[0]) => {
     const userMessage: Message = {
       id: messages.length + 1,
       text: reply.text,
@@ -44,33 +76,23 @@ export const Chatbot = () => {
       timestamp: new Date(),
     };
 
-    let botResponse = "";
-    switch (reply.action) {
-      case "projects":
-        botResponse =
-          "Nikhil's key project is an AI Chatbot for candidate information using Python, n8n, Langraph, and Crewai. He also has game development experience from Day Dreamz Studio and Bornmonkie. Scroll up to the Portfolio section to see more details!";
-        break;
-      case "skills":
-        botResponse =
-          "Nikhil specializes in: Python, PyTorch, n8n (workflow automation), Langraph, and Crewai. He has a strong background in agentic AI development and game development. Check the Skills & Tech section above for more!";
-        break;
-      case "contact":
-        botResponse =
-          "You can reach Nikhil through the contact form on this page, or connect via LinkedIn and GitHub. He's based in Nagpur, Maharashtra, India and typically responds within 3-5 business days. Scroll down to the Contact section!";
-        break;
-    }
+    setMessages([...messages, userMessage]);
+    setIsLoading(true);
+
+    const botResponseText = await sendMessageToBackend(reply.text, [...messages, userMessage]);
 
     const botMessage: Message = {
       id: messages.length + 2,
-      text: botResponse,
+      text: botResponseText,
       sender: "bot",
       timestamp: new Date(),
     };
 
-    setMessages([...messages, userMessage, botMessage]);
+    setMessages((prev) => [...prev, botMessage]);
+    setIsLoading(false);
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     if (!inputValue.trim()) return;
 
     const userMessage: Message = {
@@ -80,15 +102,22 @@ export const Chatbot = () => {
       timestamp: new Date(),
     };
 
+    setMessages([...messages, userMessage]);
+    const messageText = inputValue;
+    setInputValue("");
+    setIsLoading(true);
+
+    const botResponseText = await sendMessageToBackend(messageText, [...messages, userMessage]);
+
     const botMessage: Message = {
       id: messages.length + 2,
-      text: "Thanks for your message! For specific inquiries, please use the contact form on this page, and Nikhil will get back to you personally.",
+      text: botResponseText,
       sender: "bot",
       timestamp: new Date(),
     };
 
-    setMessages([...messages, userMessage, botMessage]);
-    setInputValue("");
+    setMessages((prev) => [...prev, botMessage]);
+    setIsLoading(false);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -152,8 +181,21 @@ export const Chatbot = () => {
             </div>
           ))}
 
+          {/* Loading Indicator */}
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-muted rounded-2xl px-4 py-3">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 rounded-full bg-foreground/60 animate-bounce [animation-delay:-0.3s]"></div>
+                  <div className="w-2 h-2 rounded-full bg-foreground/60 animate-bounce [animation-delay:-0.15s]"></div>
+                  <div className="w-2 h-2 rounded-full bg-foreground/60 animate-bounce"></div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Quick Reply Buttons - Show only after initial message */}
-          {messages.length === 1 && (
+          {messages.length === 1 && !isLoading && (
             <div className="space-y-2 pt-2">
               {quickReplies.map((reply) => (
                 <button
