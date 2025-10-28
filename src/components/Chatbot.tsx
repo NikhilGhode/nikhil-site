@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { MessageCircle, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ReactMarkdown from "react-markdown";
 
 interface Message {
   id: number;
@@ -189,7 +190,9 @@ export const Chatbot = () => {
                     : "bg-muted text-foreground"
                 }`}
               >
-                <p className="text-sm leading-relaxed">{message.text}</p>
+                <p className="text-sm leading-relaxed">
+                  <ReactMarkdown>{message.text}</ReactMarkdown>
+                </p>
               </div>
             </div>
           ))}
