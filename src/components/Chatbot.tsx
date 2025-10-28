@@ -22,7 +22,7 @@ export const Chatbot = () => {
   const [inputValue, setInputValue] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   // Flask backend URL - update this with your actual backend URL
   const FLASK_BACKEND_URL = "https://gemini-api-flask.onrender.com";
 
@@ -40,19 +40,22 @@ export const Chatbot = () => {
     { id: 3, text: "How to contact him?", action: "contact" },
   ];
 
-  const sendMessageToBackend = async (userMessage: string, conversationHistory: Message[]) => {
+  const sendMessageToBackend = async (
+    userMessage: string,
+    conversationHistory: Message[]
+  ) => {
     try {
       const response = await fetch(`${FLASK_BACKEND_URL}/chat`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           message: userMessage,
-          history: conversationHistory.map(msg => ({
-            role: msg.sender === 'user' ? 'user' : 'assistant',
-            content: msg.text
-          }))
+          history: conversationHistory.map((msg) => ({
+            role: msg.sender === "user" ? "user" : "assistant",
+            content: msg.text,
+          })),
         }),
       });
 
@@ -61,14 +64,18 @@ export const Chatbot = () => {
       }
 
       const data = await response.json();
-      return data.reply || data.response || "Sorry, I couldn't get a response from the backend.";
+      return (
+        data.reply ||
+        data.response ||
+        "Sorry, I couldn't get a response from the backend."
+      );
     } catch (error) {
-      console.error('Error calling Flask backend:', error);
+      console.error("Error calling Flask backend:", error);
       return "Sorry, I'm having trouble connecting to the backend. Please make sure your Flask server is running and accessible.";
     }
   };
 
-  const handleQuickReply = async (reply: typeof quickReplies[0]) => {
+  const handleQuickReply = async (reply: (typeof quickReplies)[0]) => {
     const userMessage: Message = {
       id: messages.length + 1,
       text: reply.text,
@@ -79,7 +86,10 @@ export const Chatbot = () => {
     setMessages([...messages, userMessage]);
     setIsLoading(true);
 
-    const botResponseText = await sendMessageToBackend(reply.text, [...messages, userMessage]);
+    const botResponseText = await sendMessageToBackend(reply.text, [
+      ...messages,
+      userMessage,
+    ]);
 
     const botMessage: Message = {
       id: messages.length + 2,
@@ -107,7 +117,10 @@ export const Chatbot = () => {
     setInputValue("");
     setIsLoading(true);
 
-    const botResponseText = await sendMessageToBackend(messageText, [...messages, userMessage]);
+    const botResponseText = await sendMessageToBackend(messageText, [
+      ...messages,
+      userMessage,
+    ]);
 
     const botMessage: Message = {
       id: messages.length + 2,
